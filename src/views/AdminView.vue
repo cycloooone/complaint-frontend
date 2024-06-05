@@ -38,7 +38,7 @@
 
 
     
-  
+    
   
 
     <!-- Edit User Dialog -->
@@ -50,7 +50,7 @@
     ></v-text-field>
           <v-select
             v-model="editedUser.role_name"
-            :items="['Администратор', 'Мэнеджер']"
+            :items="['Администратор', 'Мэнеджер по продуктам', 'Мэнеджер по обслуживанию','Мэнеджер']"
             label="Role"
           ></v-select>
         </v-card-text>
@@ -89,7 +89,7 @@
           <v-text-field v-model="newUser.password" label="Пароль"></v-text-field>
           <v-select
               v-model="newUser.role_name"
-              :items="['Администратор', 'Мэнеджер']"
+              :items="['Администратор', 'Мэнеджер по продуктам', 'Мэнеджер по обслуживанию', 'Мэнеджер']"
               label="Роль"
           ></v-select>
         

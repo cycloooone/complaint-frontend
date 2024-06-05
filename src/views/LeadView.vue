@@ -1,181 +1,158 @@
 <template>
-    <v-layout>
-      
-      <NavbarComp></NavbarComp>
-      
-      
-    <v-app-bar 
-    title="Мои жалобы"
-    class="pl-8 pr-10">
-    <v-spacer></v-spacer>
-        <v-btn
-        v-if="this.role_name == 'leader'"
-        prepend-icon="mdi-plus-box"
-        @click="deskCreateOpen"
-        color="primary"
-        variant="elevated"
-        class="text-subtitle-1"
-
-        >Создать доску</v-btn>
-      </v-app-bar>
-      <v-main>
-          <v-row class="ml-3 mr-3 mt-10">
-            <v-col v-for="desk in allDesks" :key="desk.desk_id" cols="4">
-      <DeskComp 
-      :desk_id="desk.desk_id" 
-      :desk_name="desk.desk_name"
-      :image="desk.image"
-      :role_name="this.role_name"
-      @desks_update="updateDesks"></DeskComp>
-    </v-col>
-          </v-row>
-    <v-row>
-
-      
-    </v-row>
-        
-      </v-main>
-    </v-layout>
-      <v-dialog v-model="deskCreateDialog" max-width="500px">
-        <v-card>
-          <v-card-title>
-            Создать доску
-            
-          </v-card-title>
-
-          <v-card-text>
-            <v-text-field density="compact" variant="solo-filled" flat v-model="desk.desk_name" label="Название доски"></v-text-field>
-            <v-file-input
-          @change="handleFileChange"
-          v-model="image_name"
-          label="Фон"
-          show-size
-          prepend-icon="mdi-image"
-          accept="image/*"
-        ></v-file-input>
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn @click="deskCreateClose"
-            class="text-subtitle-1"
-            color="red">Cancel</v-btn>
-            <v-btn @click="saveDesk"
-            class="text-subtitle-1"
-            color="#5865f2">Save</v-btn>
-            
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
+  <v-layout>
     
+    <navbar-comp></navbar-comp>
+    <div>
+      <v-main>
+      <v-card title="Таблица жалоб">
+        <template v-slot:text>
+          <v-text-field v-model="search" label="Search" prepend-inner-icon="mdi-magnify" variant="outlined" hide-details
+            single-line></v-text-field>
+        </template>
+
+        <v-data-table :headers="headers" :items="complaints_data" :search="search" @click:row="openDialog"
+          style="width: 100%; font-size:18px;">
+          <template v-slot:[`item.category_name`]="{ item }">
+            <v-chip :color="getCategoryColor(item.category_name)">{{ item.category_name }}</v-chip>
+          </template>
+          <template v-slot:[`item.object_name`]="{ item }">
+            <div style="font-size: 18px;">{{ item.object_name }}</div>
+          </template>
+          <template v-slot:[`item.actions`]="{ item }">
+            <v-icon size="small" @click="deleteDialog(item.id)">mdi-delete</v-icon>
+          </template>
+        </v-data-table>
+
+        <v-dialog v-model="dialog" max-width="600">
+          <v-card>
+            <v-card-title>Детали жалобы</v-card-title>
+            <v-card-text>
+              <div v-if="selectedComplaint">
+                Вы уверены удалить данную жалобу?
+              </div>
+            </v-card-text>
+            <v-card-actions>
+              <v-btn color="primary" text @click="dialog = false" :loading="delete_loader">Готово</v-btn>
+              <v-btn color="red" v-if="this.selectedComplaint_id" text @click="deleteComplaint" :loading="delete_loader">Удалить</v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+      </v-card>
+    </v-main>
+    </div>
+    
+  </v-layout>
 </template>
 
 <script>
-import axios from 'axios';
-import NavbarComp from '@/components/NavbarComp.vue';
-import DeskComp from '@/components/DeskComp.vue'
-import { mapActions, mapGetters } from 'vuex';
+import axios from "axios";
+import {mapGetters, mapActions} from 'vuex';
+import NavbarComp from "@/components/NavbarComp.vue";
 export default {
+  name:'ComplaintComp',
+  components:{
+    NavbarComp
+  },
   data() {
     return {
-      user_id: sessionStorage.getItem('user_id'),
-      name: sessionStorage.getItem('name'),
-      deskCreateDialog: false,
-      role_name: sessionStorage.getItem('role_name'),
-      task: {
-        task_name: '',
-      start_date: null,
-      end_date: null,
-      },
-      desk: {
-        desk_name: '',
-      },
-      image_name: null,
-      image_file: null,
-
-      
+      delete_loader:false,
+      search: "",
+      headers: [
+        { align: "start", key: "client_fullname", sortable: true, title: "Имя клиента" },
+        { key: "status", title: "Статус Жалобы" },
+        { key: "category_name", title: "Категория Жалобы" },
+        { key: "object_name", title: "Объект Жалобы" },
+        { key: "description", title: "Детальная инфорамация" },
+        { key: "client_email", title: "Почта" },
+        { key: "client_contact", title: "Контакты" },
+        { key: "create_date", title: "Дата создания" },
+        { text: "Actions", value: "actions", sortable: false, },
+      ],
+      dialog: false,
+      selectedComplaint: null,
+      selectedComplaint_id:null,
+      complaints: [],
+      complaint_id:null,
     };
   },
-  components:{
-    NavbarComp,DeskComp,
-  },
   computed:{
-    ...mapGetters(['allDesks']),
-    DeskNames(){
-      return this.allDesks.map(desk => desk.desk_name);
-    }
+    ...mapGetters(["COMPLAINTS"]),
+    complaints_data() {
+      return this.COMPLAINTS.filter(
+        item =>
+          item.category_name === 'Горячие напитки' || item.category_name === 'Донеры'
+      );
+    },
   },
   methods: {
-    ...mapActions(['getDesks']),
-    handleFileChange(event){
-          const file = event.target.files[0];
-          this.image_file = file;
-      },
-
-
-    deskCreateOpen(){
-      this.deskCreateDialog = true;
+    ...mapActions(["GET_COMPLAINTS"]),
+    openDialog(a) {
+      this.complaint_id = a;
+      this.selectedComplaint = this.complaints.find(item => item.id = a)
+      this.dialog = true;
     },
-    deskCreateClose(){
-      this.clearDeskDialog()
-      this.deskCreateDialog = false;
+    deleteDialog(a){
+      this.complaint_id = a;
+      this.selectedComplaint = this.complaints.find(item => item.id = a)
+      this.selectedComplaint_id = a;
+      this.dialog=true;
     },
-    async saveDesk(){
-      
-      const formData = new FormData();
-        formData.append('image', this.image_file);
-        await axios
-            .post('https://complaint-backend-drab.vercel.app/file/upload', formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-        },
-        })
-        .then(() => {
-            console.log('Uploaded image');
-        });
-      let user_id = this.user_id
-      console.log('image', this.image_name[0].name)
-      let data = {
-        user_id: user_id,
-        desk_name: this.desk.desk_name,
-        image: this.image_name[0].name
-      }
-      console.log('data with image', data)
+    async deleteComplaint(){
       try{
-        await axios.post('https://complaint-backend-drab.vercel.app/desks', data)
+        this.delete_loader=true;
+        await axios.delete(`https://complaint-backend-drab.vercel.app/complaint/${this.selectedComplaint_id}`)
       }
       catch(error){
-        console.log(error)
+        console.log("Error deleting complaint", error);
       }
       finally{
-        this.deskCreateDialog = false;
-        this.desk.desk_name = ''
-        this.clearDeskDialog()
-        this.getDesks(user_id)
+        this.selectedComplaint_id=null;
+        this.GET_COMPLAINTS();
+        this.delete_loader=false;
+        this.dialog=false;
       }
-      
-      
     },
-    clearDeskDialog(){
-      this.image_name = null;
-      this.image_file = null;
-      this.desk.desk_name = '';
+
+    updateStatus() {
+      this.dialog = false;
+      this.selectedComplaint_id=null;
     },
-    updateDesks(){
-      this.getDesks(this.user_id)
+    getCategoryColor(category) {
+      if (category === "Донеры") {
+        return "orange-darken-1";
+      }
+      if (category === "Горячие напитки") {
+        return "blue-darken-1";
+      }
+      if (category === "Персонал") {
+        return "blue";
+      }
+    },
+    getStatusColor(category) {
+      if (category === "Создано") {
+        return "orange-darken-1";
+      }
+      if (category === "На исполнение") {
+        return "blue-darken-1";
+      }
+      if (category === "Исполнено") {
+        return "blue";
+      }
+    },
+  },
+  watch:{
+    comlaint_id(){
+      this.selectedComplaint = this.complaints.find(item => item.id = this.complaint_id)
     }
   },
-  mounted(){
-    this.updateDesks()
-  }
+
+  created() {
+    this.GET_COMPLAINTS();
+  },
 };
 </script>
-
-<style>
-.container {
-  padding-left: 20px; 
-  padding-right: 20px; 
-}
-.main-container {
-  padding: 20px; 
+<style scoped>
+p {
+  font-size: 20px;
 }
 </style>

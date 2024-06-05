@@ -44,14 +44,15 @@ import ImageUpload from '@/components/ImageUpload.vue';
 
 
 <template>
+  <meta name="viewport" content="width=device-width, initial-scale=0.5">
   <v-app>
-    <v-app-bar elevation="0" style="padding-bottom: 20px; padding-top: 20px; height: 120px; border: 1px solid #ddd; border-radius: 20px;">
+    <v-app-bar class="header" elevation="0" style="padding-bottom: 20px; padding-top: 20px; height: 120px; border: 1px solid #ddd; border-radius: 20px;">
     <v-img src="../img/logo_company.jpeg" contain max-height="130" style="margin-left: 20px; margin-top: 10px;"></v-img>
-    <h3 style="color: red; font-size: 20px; margin-left: 50px;"><v-btn @click="zoomToElement" style="color: red;">О нас</v-btn><v-icon size="25" style="padding-left: 10px;">mdi-account-group</v-icon></h3>
-    <h3 style="color: red; font-size: 20px; margin-left: 50px;"><v-btn @click="this.$router.push('/form')" style="color: red;">Жалобы/Предложения</v-btn><v-icon size="25" style="padding-left: 10px;">mdi-alert-circle</v-icon></h3>
+    <h3 style="color: red; font-size: 20px; "><v-btn @click="zoomToElement" style="color: red;">О нас</v-btn><v-icon size="25" >mdi-account-group</v-icon></h3>
+    <h3 style="color: red; font-size: 20px; "><v-btn @click="this.$router.push('/form')" style="color: red;">Жалобы/Предложения</v-btn><v-icon size="25">mdi-alert-circle</v-icon></h3>
     <v-spacer></v-spacer>
     <v-spacer></v-spacer>
-    <div style="display: flex; flex-direction: column; align-items: center; margin-right: 200px"> 
+    <div style="display: flex; flex-direction: column; align-items: center; margin-right: 100px"> 
         <h3 style="color: red; font-size: 20px;">Контакты</h3>
         <h3 style="color: red; font-size: 20px;"><a href="tel:+77002592206" style="color: red; text-decoration: none;">+7 (700) 259-22-06</a></h3>
     </div>
@@ -68,7 +69,7 @@ import ImageUpload from '@/components/ImageUpload.vue';
     </div>
     <p class="text-h4" style="text-align:center; margin-top:50px;">{{product_categories[this.product_category-1]}}</p>
     <v-row v-if="this.product_category" class="mt-5">
-      <v-col cols="12" md="3" v-for="k in products[this.product_category-1]" :key="k">
+      <v-col class="imgD" cols="12" md="3" v-for="k in products[this.product_category-1]" :key="k">
       <ImageUpload :imageSrc="k.img" :imageName="k.name" :price="k.price"></ImageUpload>
     </v-col>
     </v-row>
@@ -96,10 +97,10 @@ import ImageUpload from '@/components/ImageUpload.vue';
       </template>
       <template v-slot:opposite>
         <div style="font-size:30px;">
-        Филиал
+        <strong>Филиал</strong>
         </div>
       </template>
-      <div style="font-size:19px; padding-left: 20px; width:250px;">
+      <div style="font-size:19px; width:200px;">
         Павильон находится по адресу <strong>Желтоксан 1А.</strong>
       </div>
       
@@ -112,11 +113,11 @@ import ImageUpload from '@/components/ImageUpload.vue';
       </template>
       <template v-slot:opposite>
         <div style="font-size:30px;">
-          Прозрачность
+          <strong>Прозрачность</strong>
         </div>
         
       </template>
-      <div style="font-size:19px; float: right; width:250px;">
+      <div style="font-size:19px; float: right; width:200px; margin-right: -40px;">
         У нас вы всегда можете видеть, как <strong>работает весь персонал</strong>
       </div>
       
@@ -127,11 +128,11 @@ import ImageUpload from '@/components/ImageUpload.vue';
         <v-icon color="white">mdi-clock-time-four</v-icon>
       </template>
       <template v-slot:opposite>
-        <div style="font-size:30px;">
-          График работы
-        </div>
+        <div style="font-size:30px; float: right; width:200px; margin-right: -90px;">
+        <strong>График работы</strong>
+      </div>
       </template>
-      <div style="font-size:19px; padding-left: 20px; width:250px;">
+      <div style="font-size:19px; width:250px;">
         Мы рады приветствовать вас ежедневно с <strong>10:30 до 24:00</strong>
       </div>
       
@@ -146,11 +147,11 @@ import ImageUpload from '@/components/ImageUpload.vue';
     
   </v-main>
 
-    <v-footer class="d-flex flex-column bg-black" style="margin-top: 50px">
+    <v-footer class="d-flex flex-column bg-black" style="margin-top: 50px;" >
       <div class="d-flex w-100 align-center px-4" style="margin-top: 30px">
-        <h3 style="color: white">©2024 AITU</h3>
+        <h3 style="color: white; ">©2024 AITU</h3>
         <v-spacer></v-spacer>
-        <div style="display: flex; flex-direction: column; align-items: center; margin-right: 200px">
+        <div style="display: flex; flex-direction: column; align-items: center; ">
   <h1 style="color: white">Simple</h1>
   <h2 style="color: white">Keep it simple: делай проще</h2>
 </div>
@@ -164,16 +165,14 @@ import ImageUpload from '@/components/ImageUpload.vue';
 
             <v-spacer></v-spacer> 
             <v-btn icon class="clickable-link mr-5" color="green-lighten-3" elevation="0">
-              <v-icon>mdi-whatsapp</v-icon>
+              <v-icon href="https://wa.me/87002592206">mdi-whatsapp</v-icon>
             </v-btn>
-            <v-btn icon class="clickable-link" color="pink-lighten-4" style="margin-right: 100px;"  elevation="0">
-              <v-icon>mdi-instagram</v-icon>
+            <v-btn icon class="clickable-link" color="pink-lighten-4"  elevation="0">
+              <v-icon href="https://www.instagram.com/simpleastana/?hl=en">mdi-instagram</v-icon>
             </v-btn>
           </v-col>
         </v-row>
       </div>
-
-
 
     </v-footer>
   </v-app>
@@ -188,10 +187,9 @@ import ImageUpload from '@/components/ImageUpload.vue';
   justify-content: space-between;
   font-size: 23px;
   margin-top: 10px;
-  width: 104%;
+  width: 100%; 
   border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-margin-bottom: 10px;
-  
+  margin-bottom: 10px;
 }
 
 .clickable-link {
@@ -207,15 +205,14 @@ margin-bottom: 10px;
 }
 
 .divider {
-  width: calc(100% - 200px); 
+  width: 100%; 
   border-bottom: 1px solid white;
-  margin: 20px auto; 
+  margin: 20px auto;
 }
-.dividerDoner{
-  width: calc(100% - 25px); 
-  border-bottom: 1px solid rgb(0, 0, 0);
-  margin: 20px auto; 
-}
+
+
+
+
 
 
 </style>

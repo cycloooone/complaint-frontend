@@ -1,25 +1,63 @@
 <template>
-  <v-layout>
-    <NavbarComp></NavbarComp>
-      <v-main>
-        <div>
-    <iframe src="http://localhost:8000" width="100%" height="970px"></iframe>
+  <div v-if="COMPLAINTS">
+    <Bar
+      id="category-chart-id"
+      :options="chartOptions"
+      :data="chartData"
+    />
   </div>
-      </v-main>
-  </v-layout>
- 
 </template>
 
 <script>
-import NavbarComp from '@/components/NavbarComp.vue';
-export default{
-  data(){
-    return{
+import { Bar } from 'vue-chartjs'
+import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale } from 'chart.js'
+import { mapGetters, mapActions } from 'vuex'
 
+ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
+
+export default {
+  computed:{
+    ...mapGetters(["COMPLAINTS"]),
+  },
+  name: 'CategoryBarChart',
+  components: { Bar },
+  data() {
+    return {
+      complaints: null,
+      chartData: {
+        labels: [], // Initialize as empty array
+        datasets: [{
+          label: 'Category Occurrences',
+          backgroundColor: 'rgba(75, 192, 192, 0.6)', // Example background color
+          data: [] // Initialize as empty array
+        }]
+      },
+      chartOptions: {
+        indexAxis: 'y',
+        responsive: true
+      }
     }
   },
-  components:{
-    NavbarComp
+  methods: {
+    ...mapActions(["GET_COMPLAINTS"]),
+    updateChartData() {
+      if (this.COMPLAINTS) {
+        const categoryNames = Array.from(new Set(this.COMPLAINTS.map(obj => obj.category_name)));
+        const categoryOccurrence = categoryNames.map(name => this.COMPLAINTS.filter(obj => obj.category_name === name).length);
+        const data = categoryNames.map((name, index) => ({ name, occurrence: categoryOccurrence[index] }));
+
+        // Sort the data by occurrence count in descending order
+        data.sort((a, b) => b.occurrence - a.occurrence);
+
+        // Update chart data
+        this.chartData.labels = data.map(item => item.name);
+        this.chartData.datasets[0].data = data.map(item => item.occurrence);
+      }
+    }
+  },
+  created() {
+    this.GET_COMPLAINTS();
+    this.updateChartData();
   }
 }
 </script>

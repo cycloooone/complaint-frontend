@@ -39,7 +39,7 @@
       <v-spacer></v-spacer>
         <v-chip
       color="red"
-      prepend-icon="mdi-trash-can-outline"
+      prepend-icon="mdi-pencil"
       @click.stop="deskDeleteDialog"
       variant="outlined">
       Delete

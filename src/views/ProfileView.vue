@@ -1,122 +1,158 @@
 <template>
   <v-layout>
-    <v-main>
-      <v-container>
-      <v-row justify="center">
-        <v-col cols="12" sm="8" md="6" >
-          <v-card elevation="10">
-          <v-row justify="center" class="mt-5">
-            <v-avatar size="125px" :image="'https://complaint-backend-drab.vercel.app/file/apc18-bucket/' + this.userData.image">
-            </v-avatar>
-          </v-row>
-            <v-card-subtitle class="text-center mt-5" >{{this.userData.role_name}}</v-card-subtitle>
-            <v-card-title class="text-center text-h4">{{this.userData.username}}</v-card-title>
-            <v-divider></v-divider> 
-            <v-card-text class="text-h7">
-              {{ this.userData.name }} {{ this.userData.surname }}
+    
+    <navbar-comp></navbar-comp>
+    <div>
+      <v-main>
+      <v-card title="Таблица жалоб">
+        <template v-slot:text>
+          <v-text-field v-model="search" label="Search" prepend-inner-icon="mdi-magnify" variant="outlined" hide-details
+            single-line></v-text-field>
+        </template>
+
+        <v-data-table :headers="headers" :items="complaints_data" :search="search"
+          style="width: 100%; font-size:18px;">
+          <template v-slot:[`item.category_name`]="{ item }">
+            <v-chip :color="getCategoryColor(item.category_name)">{{ item.category_name }}</v-chip>
+          </template>
+          <template v-slot:[`item.object_name`]="{ item }">
+            <div style="font-size: 18px;">{{ item.object_name }}</div>
+          </template>
+          <template v-slot:[`item.actions`]="{ item }">
+            <v-icon size="small" @click="deleteDialog(item.id)">mdi-delete</v-icon>
+          </template>
+        </v-data-table>
+
+        <v-dialog v-model="dialog" max-width="600">
+          <v-card>
+            <v-card-title>Детали жалобы</v-card-title>
+            <v-card-text>
+              <div v-if="selectedComplaint">
+                Вы уверены удалить данную жалобу?
+              </div>
             </v-card-text>
-          <v-divider></v-divider>
-            <v-card-title class="mt-5 headline text-h5">Contact Information</v-card-title>
-                  <v-card-subtitle>Email:</v-card-subtitle>
-                  <v-card-text>{{this.userData.mail}}</v-card-text>
-                  <v-card-subtitle>Phone:</v-card-subtitle>
-                  <v-card-text>{{ this.userData.number }}</v-card-text>
-                  <v-card-subtitle>Department:</v-card-subtitle>
-                  <v-card-text>{{ this.userData.department }}</v-card-text>
-                  
-                  <v-card-actions>
-                    <v-btn
-                  @click="logout"
-                  class="mb-2 ml-5 text-none text-subtitle-1"
-                  color="blue-grey-darken-4"
-                  size="small"
-                  variant="flat"><v-icon left>mdi-logout</v-icon>Logout</v-btn>
-                  </v-card-actions>
-                  
-                </v-card>
-        </v-col>
-      </v-row>
-
-
-          
-          
-    
-    </v-container>
+            <v-card-actions>
+              <v-btn color="primary" text @click="dialog = false" :loading="delete_loader">Готово</v-btn>
+              <v-btn color="red" v-if="this.selectedComplaint_id" text @click="deleteComplaint" :loading="delete_loader">Удалить</v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+      </v-card>
     </v-main>
-    
+    </div>
     
   </v-layout>
-  
 </template>
 
-
-   
 <script>
-
-
+import axios from "axios";
+import {mapGetters, mapActions} from 'vuex';
+import NavbarComp from "@/components/NavbarComp.vue";
 export default {
+  name:'ComplaintComp',
+  components:{
+    NavbarComp
+  },
   data() {
-      return {
-        username: sessionStorage.getItem('username'),
-        role_name: sessionStorage.getItem('role_name'),
-        user_id: sessionStorage.getItem('user_id'),
-        userData: {
-          name: "",
-          surname: "",
-          image: null, 
-          mail: null,
-          department: null,
-          number: null,
-          username: null, 
-          role_name: null,
-        },
-        
-      };
+    return {
+      delete_loader:false,
+      search: "",
+      headers: [
+        { align: "start", key: "client_fullname", sortable: true, title: "Имя клиента" },
+        { key: "status", title: "Статус Жалобы" },
+        { key: "category_name", title: "Категория Жалобы" },
+        { key: "object_name", title: "Объект Жалобы" },
+        { key: "description", title: "Детальная инфорамация" },
+        { key: "client_email", title: "Почта" },
+        { key: "client_contact", title: "Контакты" },
+        { key: "create_date", title: "Дата создания" },
+        { text: "Actions", value: "actions", sortable: false, },
+      ],
+      dialog: false,
+      selectedComplaint: null,
+      selectedComplaint_id:null,
+      complaints: [],
+      complaint_id:null,
+    };
+  },
+  computed:{
+    ...mapGetters(["COMPLAINTS"]),
+    complaints_data() {
+      return this.COMPLAINTS.filter(
+        item =>
+          item.category_name === 'Обслуживание'
+      );
+    },
+  },
+  methods: {
+    ...mapActions(["GET_COMPLAINTS"]),
+    openDialog(a) {
+      this.complaint_id = a;
+      this.selectedComplaint = this.complaints.find(item => item.id = a)
+      this.dialog = true;
+    },
+    deleteDialog(a){
+      this.complaint_id = a;
+      this.selectedComplaint = this.complaints.find(item => item.id = a)
+      this.selectedComplaint_id = a;
+      this.dialog=true;
+    },
+    async deleteComplaint(){
+      try{
+        this.delete_loader=true;
+        await axios.delete(`https://complaint-backend-drab.vercel.app/complaint/${this.selectedComplaint_id}`)
+      }
+      catch(error){
+        console.log("Error deleting complaint", error);
+      }
+      finally{
+        this.selectedComplaint_id=null;
+        this.GET_COMPLAINTS();
+        this.delete_loader=false;
+        this.dialog=false;
+      }
     },
 
-    computed: {
-        imageUrl() {
-            let baseUrl = "https://complaint-backend-drab.vercel.app/file/apc18-bucket/"
-            let imageUrl = baseUrl.concat(this.image)
-            return imageUrl
-        }
+    updateStatus() {
+      this.dialog = false;
+      this.selectedComplaint_id=null;
     },
+    getCategoryColor(category) {
+      if (category === "Донеры") {
+        return "orange-darken-1";
+      }
+      if (category === "Горячие напитки") {
+        return "blue-darken-1";
+      }
+      if (category === "Персонал") {
+        return "blue";
+      }
+    },
+    getStatusColor(category) {
+      if (category === "Создано") {
+        return "orange-darken-1";
+      }
+      if (category === "На исполнение") {
+        return "blue-darken-1";
+      }
+      if (category === "Исполнено") {
+        return "blue";
+      }
+    },
+  },
+  watch:{
+    comlaint_id(){
+      this.selectedComplaint = this.complaints.find(item => item.id = this.complaint_id)
+    }
+  },
 
-    methods: {
-      logout() {
-        sessionStorage.clear();
-
-        this.$store.dispatch('resetStore');
-        this.$router.push('/login');
-      },
-      async getUser(){
-            this.userData.username = sessionStorage.getItem('username')
-            this.userData.name = sessionStorage.getItem('name')
-            this.userData.surname = sessionStorage.getItem('surname')
-            this.userData.mail = sessionStorage.getItem('mail')
-            this.userData.number = sessionStorage.getItem('number')
-            this.userData.department = sessionStorage.getItem('department')
-            this.userData.role_name = sessionStorage.getItem('role_name')
-            this.userData.image = sessionStorage.getItem('image')
-      },
-      editProfile() {
-      // Add logic to navigate to the edit profile page or show an edit modal
-      console.log("Edit button clicked");
-    },
-    editAvatar(){
-        this.avatarDialog = true;
-    },
-    },
-    created() {
-        this.getUser()
-    },
+  created() {
+    this.GET_COMPLAINTS();
+  },
 };
 </script>
-
-
 <style scoped>
-*{
-  text-align: center;
+p {
+  font-size: 20px;
 }
 </style>
-

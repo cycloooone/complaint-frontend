@@ -22,7 +22,6 @@ export default {
         async GET_USERS( {commit}){
 
                 let data = await axios.get("https://complaint-backend-drab.vercel.app/users");
-                console.log(data.data.rows)
                 if(!this.USERS){
                     commit("setTableData", data.data.rows)
                 }
